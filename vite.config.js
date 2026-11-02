@@ -49,7 +49,7 @@ function venezuelaNewsApiPlugin() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/venezuela-legal-monitor/',
   plugins: [
     react(),
     tailwindcss(),
