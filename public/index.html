@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Legal Venezuela - Vista Limpia</title>
+    <!-- Tailwind CSS para diseño moderno, profesional y libre de ruido -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Encabezado Principal -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-900 font-extrabold text-xl shadow-inner">
+                    ⚖️
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Monitor Legal Venezuela</h1>
+                    <p class="text-xs text-slate-400">Gacetas Oficiales sintetizadas y libres de ruido</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 self-end sm:self-auto">
+                <div class="text-xs bg-slate-800/90 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="headerStatus">Actualizado</span>
+                    <span id="counterBadge" class="bg-slate-700 px-2 py-0.5 rounded text-[11px] text-amber-300 font-mono ml-1">Cargando...</span>
+                </div>
+                <button onclick="recargarDatos()" title="Actualizar datos" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition text-xs flex items-center gap-1 border border-slate-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span class="hidden sm:inline">Refrescar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 w-full">
+        
+        <!-- Columna Izquierda/Central: Gacetas Oficiales (Ocupa 2/3) -->
+        <section class="lg:col-span-2 space-y-6">
+            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                
+                <!-- Barra superior con Título y Buscador -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <span>Registro de Gacetas Oficiales</span>
+                            <span id="gacetasFiltradasCount" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Normas publicadas con resumen directo y puntos clave</p>
+                    </div>
+
+                    <!-- Buscador instantáneo -->
+                    <div class="relative w-full sm:w-80">
+                        <input type="text" id="searchInput" placeholder="Buscar por número, tema o palabra clave..." 
+                            class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition bg-slate-50 focus:bg-white">
+                        <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                </div>
+
+                <!-- Filtros rápidos por Categoría -->
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none border-b border-slate-100 text-xs" id="categoryPills">
+                    <button onclick="filtrarCategoria('todas')" class="cat-pill active px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-white" data-cat="todas">Todas</button>
+                    <button onclick="filtrarCategoria('Tributario')" class="cat-pill px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Tributario">Tributario / SENIAT</button>
+                    <button onclick="filtrarCategoria('Laboral')" class="cat-pill px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Laboral">Laboral</button>
+                    <button onclick="filtrarCategoria('Mercantil')" class="cat-pill px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Mercantil">Mercantil</button>
+                    <button onclick="filtrarCategoria('Bancario')" class="cat-pill px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Bancario">Bancario / SUDEBAN</button>
+                    <button onclick="filtrarCategoria('Cambiario')" class="cat-pill px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200" data-cat="Cambiario">Cambiario / BCV</button>
+                </div>
+
+                <!-- Tabla Limpia de Gacetas -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/70">
+                                <th class="py-3 px-4 rounded-l-lg">Gaceta / Fecha</th>
+                                <th class="py-3 px-4">Categoría</th>
+                                <th class="py-3 px-4">Resumen Directo</th>
+                                <th class="py-3 px-4 text-right rounded-r-lg">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gacetasTableBody" class="divide-y divide-slate-100 text-sm">
+                            <tr>
+                                <td colspan="4" class="py-12 text-center text-slate-400">
+                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mb-2"></div>
+                                    <p>Cargando gacetas oficiales...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Columna Derecha: Notas y Análisis (Secundario, 1/3) -->
+        <aside class="space-y-6">
+            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-md font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm"></span>
+                        Notas y Análisis (Secundario)
+                    </h2>
+                    <span id="noticiasCount" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">0</span>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Artículos de opinión, doctrina jurídica y contexto aislados para no saturar el registro normativo.</p>
+
+                <!-- Contenedor de Noticias -->
+                <div id="noticiasContainer" class="space-y-3.5 text-sm divide-y divide-slate-100">
+                    <!-- Se inyectarán dinámicamente -->
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- Modal para Detalle y Análisis Completo de la Gaceta -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-150">
+            <!-- Modal Header -->
+            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <span id="modalCategory" class="text-[11px] font-semibold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full">Categoría</span>
+                    <h3 id="modalTitle" class="text-lg font-bold text-white mt-1">Número de Gaceta</h3>
+                    <p id="modalDate" class="text-xs text-slate-400">Fecha de Publicación</p>
+                </div>
+                <button onclick="cerrarModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 space-y-5 overflow-y-auto flex-1 text-sm">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">¿De qué se trata la norma?</h4>
+                    <p id="modalResumen" class="text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200"></p>
+                </div>
+
+                <div id="modalLoMasImportanteSection">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Puntos Más Importantes y Obligaciones</h4>
+                    <ul id="modalLoMasImportanteList" class="space-y-2 text-slate-700"></ul>
+                </div>
+
+                <div id="modalAnalysisSection" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span class="text-[11px] font-bold uppercase text-slate-400 block mb-1">A quién afecta</span>
+                        <p id="modalAfecta" class="text-xs text-slate-700 font-medium"></p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Impacto Económico / Operativo</span>
+                        <p id="modalImpacto" class="text-xs text-slate-700 font-medium"></p>
+                    </div>
+                </div>
+
+                <div id="modalSancionesSection" class="bg-rose-50 border border-rose-100 p-3.5 rounded-xl">
+                    <span class="text-[11px] font-bold uppercase text-rose-700 block mb-1">Riesgos y Sanciones por Incumplimiento</span>
+                    <p id="modalSanciones" class="text-xs text-rose-900"></p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-between items-center">
+                <a id="modalPdfLink" href="#" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 px-4 py-2 rounded-xl transition shadow-sm">
+                    <span>Ver Fuente Oficial / Gaceta</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+                <button onclick="cerrarModal()" class="text-xs font-medium text-slate-600 hover:text-slate-900 px-4 py-2 rounded-lg hover:bg-slate-200 transition">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-400">
+        <p>LexVen Monitor • Plataforma de Seguimiento Normativo y Gacetas Oficiales de Venezuela • Diseñado para visualización ejecutiva limpia</p>
+    </footer>
+
+    <!-- Script de Datos y Lógica de Interfaz -->
+    <script>
+        let gacetasData = [];
+        let noticiasData = [];
+        let categoriaActiva = 'todas';
+
+        // Fallback de datos base si la API local no está corriendo (p.ej. al ver en GitHub Pages)
+        const FALLBACK_GACETAS = [
+            {
+                numero: "G.O. Ext. 6.806",
+                fecha: "2024-05-08",
+                categoria: "Tributario / SENIAT",
+                resumen: "Ley de Protección de las Pensiones de Seguridad Social. Fija una contribución especial mensual a cargo de los empleadores privados del 9% sobre el total de pagos por sueldos y bonificaciones en divisas o moneda nacional.",
+                loMasImportante: [
+                    "Contribución especial del 9% obligatoria para empresas privadas.",
+                    "Declaración y pago mensual ante el SENIAT según calendario de sujetos pasivos especiales.",
+                    "Sanciones severas de hasta 1000% del tributo omitido según el Código Orgánico Tributario."
+                ],
+                pdfUrl: "https://spgoin.imprentanacional.gob.ve/",
+                analysis: {
+                    aQuienAfecta: "Todas las personas jurídicas y sociedades de hecho en Venezuela.",
+                    impactoEconomico: "Incremento del 9% en costos patronales mensuales de nómina.",
+                    sancionesRiesgos: "Cierre temporal de establecimiento y multas en moneda de mayor valor."
+                }
+            },
+            {
+                numero: "G.O. 42.895",
+                fecha: "2026-11-03",
+                categoria: "Tributario / SENIAT",
+                resumen: "Providencia del SENIAT que establece el calendario de declaraciones y pagos de tributos nacionales (IVA, Anticipos ISLR, IGTF y Contribución de Pensiones) para Sujetos Pasivos Especiales.",
+                loMasImportante: [
+                    "Vencimientos quincenales según el último número del RIF.",
+                    "Pago electrónico obligatorio a través de banca autorizada.",
+                    "Calendario obligatorio para agentes de retención de IVA e IGTF."
+                ],
+                pdfUrl: "https://www.seniat.gob.ve/",
+                analysis: {
+                    aQuienAfecta: "Contribuyentes Especiales (SPE) designados formalmente.",
+                    impactoEconomico: "Exige estricto control de liquidez cada 15 días.",
+                    sancionesRiesgos: "Bloqueo del portal fiscal y clausura temporal de locales."
+                }
+            },
+            {
+                numero: "G.O. Ext. 6.755",
+                fecha: "2023-08-10",
+                categoria: "Tributario Municipal",
+                resumen: "Ley Orgánica de Coordinación y Armonización de las Potestades Tributarias (LOCAPTEM). Fija tope máximo general de 3% a los impuestos municipales sobre ingresos brutos comerciales.",
+                loMasImportante: [
+                    "Tope máximo general de 3% a las patentes comerciales.",
+                    "Licencias de actividades económicas con vigencia mínima de 3 años.",
+                    "Prohibición de pagos en divisas sin anclaje a la tasa oficial del BCV."
+                ],
+                pdfUrl: "http://www.asambleanacional.gob.ve/",
+                analysis: {
+                    aQuienAfecta: "Comercios, industrias y sucursales en cualquier municipio del país.",
+                    impactoEconomico: "Certeza en tasas impositivas locales y eliminación de cobros desproporcionados.",
+                    sancionesRiesgos: "Reclamación ante la Sala Constitucional del TSJ por exceso tributario."
+                }
+            },
+            {
+                numero: "G.O. 42.894",
+                fecha: "2026-11-02",
+                categoria: "Laboral",
+                resumen: "Resolución del Ministerio del Trabajo que establece los lineamientos obligatorios para la actualización y registro de solvencia en el RNET (Registro Nacional de Entidades de Trabajo).",
+                loMasImportante: [
+                    "Obligatoriedad de mantener la solvencia laboral actualizada trimestralmente.",
+                    "Declaración de puestos presenciales y esquemas de teletrabajo.",
+                    "Control de aprendices INCES y cuota laboral de personas con discapacidad."
+                ],
+                pdfUrl: "http://www.mpppst.gob.ve/",
+                analysis: {
+                    aQuienAfecta: "Empresas con nómina de trabajadores en relación de dependencia.",
+                    impactoEconomico: "Costos de solvencia y auditoría de cumplimiento laboral.",
+                    sancionesRiesgos: "Impedimento para contratar con el Estado y multas de inspectores del trabajo."
+                }
+            },
+            {
+                numero: "G.O. 42.893",
+                fecha: "2026-10-30",
+                categoria: "Mercantil",
+                resumen: "Providencia SAREN de simplificación de trámites registrales mercantiles. Digitalización del otorgamiento de actas de asambleas, modificaciones estatutarias y reservas de nombre.",
+                loMasImportante: [
+                    "Inscripción de asambleas ordinarias y extraordinarias por vía electrónica.",
+                    "Firma digital y certificación con código QR seguro.",
+                    "Reducción sustancial de tiempos de tramitación a menos de 72 horas hábiles."
+                ],
+                pdfUrl: "https://www.saren.gob.ve/",
+                analysis: {
+                    aQuienAfecta: "Accionistas, juntas directivas, comisarios y apoderados legales.",
+                    impactoEconomico: "Ahorro de gestoría física y rapidez en formalización corporativa.",
+                    sancionesRiesgos: "Rechazo de documentos que no coincidan con RIF y registro biométrico."
+                }
+            }
+        ];
+
+        const FALLBACK_NOTICIAS = [
+            {
+                titulo: "Análisis: Impacto de las nuevas normativas fiscales en el sector PYME venezolano",
+                fuente: "Boletín Jurídico Especial",
+                fecha: "2026-11-04",
+                url: "#",
+                resumen: "Evaluación sobre la carga parafiscal acumulada y estrategias de optimización contable."
+            },
+            {
+                titulo: "Entrevista a especialistas sobre los retos del cumplimiento normativo este trimestre",
+                fuente: "Actualidad Legal",
+                fecha: "2026-11-03",
+                url: "#",
+                resumen: "Expertos abordan la digitalización de trámites del SAREN y fiscalizaciones del SENIAT."
+            },
+            {
+                titulo: "Perspectivas sobre el IGTF y su aplicación en pagos con divisas y criptoactivos",
+                fuente: "Finanzas & Derecho",
+                fecha: "2026-10-28",
+                url: "#",
+                resumen: "Aclaratorias sobre la alícuota del 3% y las exoneraciones vigentes."
+            }
+        ];
+
+        async function cargarDatos() {
+            try {
+                // 1. Intentamos consultar la API del servidor Express
+                const response = await fetch('/api/monitor-legal');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.gacetas && data.gacetas.length > 0) {
+                        gacetasData = data.gacetas;
+                        noticiasData = data.noticiasLegales || [];
+                        renderizarTodo(data.updatedAt);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.log("Servidor Express no disponible localmente, probando live-news.json...");
+            }
+
+            // 2. Si la API no responde (p.ej. en GitHub Pages), cargamos el archivo JSON estático
+            try {
+                const response = await fetch('./live-news.json');
+                if (response.ok) {
+                    const json = await response.json();
+                    if (json.items && json.items.length > 0) {
+                        procesarItemsEstaticos(json.items, json.updatedAt);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.log("No se pudo cargar live-news.json, usando dataset enriquecido de respaldo.");
+            }
+
+            // 3. Respaldo garantizado
+            gacetasData = FALLBACK_GACETAS;
+            noticiasData = FALLBACK_NOTICIAS;
+            renderizarTodo(new Date().toISOString());
+        }
+
+        function procesarItemsEstaticos(items, updatedAt) {
+            const gacetas = [...FALLBACK_GACETAS];
+            const noticias = [];
+            const numerosSet = new Set(gacetas.map(g => g.numero.toLowerCase()));
+
+            items.forEach(item => {
+                const isGaceta = item.hasOfficialGaceta || /gaceta/i.test(item.title) || /gaceta/i.test(item.gaceta || '');
+                if (isGaceta) {
+                    const num = item.gaceta || (item.title.match(/Gaceta Oficial [^\s•-]+/i) ? item.title.match(/Gaceta Oficial [^\s•-]+/i)[0] : item.title);
+                    if (!numerosSet.has(num.toLowerCase())) {
+                        numerosSet.add(num.toLowerCase());
+                        gacetas.push({
+                            numero: num,
+                            fecha: item.date || '2026-10-22',
+                            categoria: normalizarCat(item.category),
+                            resumen: item.deQueSeTrata || item.summary,
+                            loMasImportante: item.loMasImportante || [],
+                            pdfUrl: item.sourceUrl || '#',
+                            analysis: item.analysis || null
+                        });
+                    }
+                } else {
+                    noticias.push({
+                        titulo: item.title,
+                        fuente: item.sourceName || 'Boletín Legal',
+                        fecha: item.date || '2026-10-20',
+                        url: item.sourceUrl || '#',
+                        resumen: item.summary || ''
+                    });
+                }
+            });
+
+            gacetasData = gacetas;
+            noticiasData = noticias.length > 0 ? noticias : FALLBACK_NOTICIAS;
+            renderizarTodo(updatedAt);
+        }
+
+        function normalizarCat(cat) {
+            if (!cat) return 'General';
+            const c = cat.toLowerCase();
+            if (c.includes('tribut')) return 'Tributario / SENIAT';
+            if (c.includes('labor')) return 'Laboral';
+            if (c.includes('mercant') || c.includes('comerc')) return 'Mercantil';
+            if (c.includes('banc') || c.includes('financ')) return 'Bancario / SUDEBAN';
+            if (c.includes('cambi') || c.includes('divis')) return 'Cambiario / BCV';
+            return cat.charAt(0).toUpperCase() + cat.slice(1);
+        }
+
+        function renderizarTodo(updatedAt) {
+            document.getElementById('counterBadge').textContent = `${gacetasData.length} Gacetas | ${noticiasData.length} Artículos`;
+            if (updatedAt) {
+                const dateObj = new Date(updatedAt);
+                document.getElementById('headerStatus').textContent = `Actualizado ${dateObj.toLocaleDateString('es-VE')}`;
+            }
+            aplicarFiltros();
+            renderNoticias(noticiasData);
+        }
+
+        function renderGacetas(lista) {
+            const tbody = document.getElementById('gacetasTableBody');
+            tbody.innerHTML = '';
+
+            document.getElementById('gacetasFiltradasCount').textContent = `${lista.length} de ${gacetasData.length}`;
+
+            if (lista.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-12 text-center text-slate-400">
+                            <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <p class="font-medium">No se encontraron gacetas con ese criterio.</p>
+                            <p class="text-xs text-slate-400 mt-1">Prueba borrando el texto de búsqueda o cambiando la categoría.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            lista.forEach((g, index) => {
+                const catClass = getCategoryBadgeStyle(g.categoria);
+                const puntosHtml = g.loMasImportante && g.loMasImportante.length > 0 
+                    ? `<ul class="mt-2 space-y-1 text-xs text-slate-600 border-l-2 border-slate-200 pl-2.5">
+                         ${g.loMasImportante.slice(0, 2).map(p => `<li>• ${p}</li>`).join('')}
+                       </ul>`
+                    : '';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/80 transition-colors group">
+                        <!-- Columna Gaceta / Fecha -->
+                        <td class="py-4 px-4 align-top whitespace-nowrap">
+                            <span class="font-bold text-slate-900 block font-mono text-sm group-hover:text-amber-700 transition">${g.numero}</span>
+                            <span class="text-xs text-slate-400 font-mono block mt-0.5">${g.fecha}</span>
+                            <span class="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">Vigente</span>
+                        </td>
+                        
+                        <!-- Columna Categoría -->
+                        <td class="py-4 px-4 align-top whitespace-nowrap">
+                            <span class="inline-block px-2.5 py-1 text-xs font-semibold rounded-lg ${catClass}">
+                                ${g.categoria}
+                            </span>
+                        </td>
+
+                        <!-- Columna Resumen Directo -->
+                        <td class="py-4 px-4 align-top text-slate-700 leading-relaxed">
+                            <p class="text-sm font-medium text-slate-800">${g.resumen}</p>
+                            ${puntosHtml}
+                        </td>
+
+                        <!-- Columna Acción -->
+                        <td class="py-4 px-4 align-top text-right whitespace-nowrap space-y-1.5">
+                            <a href="${g.pdfUrl}" target="_blank" class="inline-block text-xs font-medium text-slate-800 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition border border-slate-200 w-full text-center">
+                                Ver Gaceta ↗
+                            </a>
+                            <button onclick="abrirDetalle(${index})" class="inline-block text-xs font-semibold text-slate-900 bg-amber-50 hover:bg-amber-100 text-amber-900 px-3 py-1.5 rounded-lg transition border border-amber-200 w-full text-center">
+                                Análisis
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function getCategoryBadgeStyle(cat) {
+            const c = (cat || '').toLowerCase();
+            if (c.includes('tribut')) return 'bg-blue-50 text-blue-700 border border-blue-200';
+            if (c.includes('labor')) return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+            if (c.includes('mercant')) return 'bg-purple-50 text-purple-700 border border-purple-200';
+            if (c.includes('banc')) return 'bg-amber-50 text-amber-700 border border-amber-200';
+            if (c.includes('cambi')) return 'bg-cyan-50 text-cyan-700 border border-cyan-200';
+            return 'bg-slate-100 text-slate-700 border border-slate-200';
+        }
+
+        function renderNoticias(lista) {
+            const container = document.getElementById('noticiasContainer');
+            container.innerHTML = '';
+            document.getElementById('noticiasCount').textContent = lista.length;
+
+            if (lista.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No hay notas secundarias registradas.</p>`;
+                return;
+            }
+
+            lista.forEach(n => {
+                container.innerHTML += `
+                    <div class="pt-3 first:pt-0 group">
+                        <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                            <span class="font-semibold text-slate-500">${n.fuente}</span>
+                            <span class="font-mono">${n.fecha}</span>
+                        </div>
+                        <a href="${n.url}" target="_blank" class="font-semibold text-slate-800 hover:text-amber-600 transition block text-xs leading-snug">
+                            ${n.titulo} ↗
+                        </a>
+                        ${n.resumen ? `<p class="text-[11px] text-slate-500 mt-1 line-clamp-2">${n.resumen}</p>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        // Buscador y Filtro por Categorías
+        function aplicarFiltros() {
+            const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            
+            const filtradas = gacetasData.filter(g => {
+                const matchQuery = !query || 
+                    g.numero.toLowerCase().includes(query) || 
+                    g.resumen.toLowerCase().includes(query) || 
+                    g.categoria.toLowerCase().includes(query) ||
+                    (g.loMasImportante && g.loMasImportante.some(p => p.toLowerCase().includes(query)));
+
+                const matchCat = categoriaActiva === 'todas' || 
+                    g.categoria.toLowerCase().includes(categoriaActiva.toLowerCase());
+
+                return matchQuery && matchCat;
+            });
+
+            renderGacetas(filtradas);
+        }
+
+        function filtrarCategoria(cat) {
+            categoriaActiva = cat;
+            document.querySelectorAll('.cat-pill').forEach(btn => {
+                if (btn.dataset.cat.toLowerCase() === cat.toLowerCase()) {
+                    btn.className = 'cat-pill active px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-white';
+                } else {
+                    btn.className = 'cat-pill px-3 py-1.5 rounded-lg font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+                }
+            });
+            aplicarFiltros();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
+
+        // Ventana Modal de Detalle
+        function abrirDetalle(index) {
+            const g = gacetasData[index];
+            if (!g) return;
+
+            document.getElementById('modalTitle').textContent = g.numero;
+            document.getElementById('modalDate').textContent = `Publicado el ${g.fecha}`;
+            document.getElementById('modalCategory').textContent = g.categoria;
+            document.getElementById('modalResumen').textContent = g.resumen;
+            document.getElementById('modalPdfLink').href = g.pdfUrl;
+
+            // Puntos más importantes
+            const listContainer = document.getElementById('modalLoMasImportanteList');
+            listContainer.innerHTML = '';
+            const items = (g.loMasImportante && g.loMasImportante.length > 0) 
+                ? g.loMasImportante 
+                : ["Publicación formal vinculante para todo el territorio nacional."];
+
+            items.forEach(p => {
+                listContainer.innerHTML += `<li class="flex items-start gap-2 text-xs"><span class="text-amber-500 font-bold">•</span> <span>${p}</span></li>`;
+            });
+
+            // Análisis
+            const analysis = g.analysis || {};
+            document.getElementById('modalAfecta').textContent = analysis.aQuienAfecta || 'Empresas, personas naturales y entes regulados.';
+            document.getElementById('modalImpacto').textContent = analysis.impactoEconomico || 'Revisión obligatoria de cumplimiento contable y operativo.';
+            document.getElementById('modalSanciones').textContent = analysis.sancionesRiesgos || 'Riesgo de multas fiscales, clausuras temporales y reparos administrativos.';
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function cerrarModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Cerrar modal al presionar Escape o hacer clic fuera
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') cerrarModal();
+        });
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') cerrarModal();
+        });
+
+        function recargarDatos() {
+            cargarDatos();
+        }
+
+        // Inicializar
+        cargarDatos();
+    </script>
+</body>
+</html>
